@@ -1,0 +1,638 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#1a3a5c">
+<title>MeishiMatch</title>
+<style>
+:root{
+  --primary:#1a3a5c;--accent:#00b896;--accent-d:#00856b;
+  --danger:#ff4757;--warn:#ffa040;
+  --bg:#f0f4f8;--card:#fff;
+  --text:#1a2332;--text2:#6b7a8d;--text3:#a0aab4;
+  --border:#e2e8f0;--tag-bg:#e8f5f0;--tag-c:#00856b;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+html,body{height:100%;overflow:hidden;}
+body{font-family:-apple-system,'Hiragino Sans','Meiryo',sans-serif;background:var(--bg);color:var(--text);}
+#app{height:100dvh;display:flex;flex-direction:column;max-width:430px;margin:0 auto;background:var(--bg);overflow:hidden;position:relative;}
+.screen{display:flex;flex-direction:column;height:100dvh;overflow:hidden;}
+.screen.hidden{display:none;}
+.sb{background:var(--primary);color:rgba(255,255,255,.6);font-size:11px;padding:env(safe-area-inset-top,6px) 16px 6px;display:flex;justify-content:space-between;flex-shrink:0;}
+.nb{background:var(--primary);color:#fff;padding:12px 14px;display:flex;align-items:center;gap:10px;flex-shrink:0;}
+.nb-title{font-size:17px;font-weight:700;flex:1;}
+.nb-btn{background:rgba(255,255,255,.15);border:none;color:#fff;border-radius:8px;padding:6px 10px;font-size:13px;cursor:pointer;}
+.nb-back{background:none;border:none;color:#fff;font-size:22px;cursor:pointer;padding:0;line-height:1;}
+.sb-body{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;}
+.bnav{background:var(--card);border-top:1px solid var(--border);display:flex;flex-shrink:0;padding-bottom:env(safe-area-inset-bottom,0);}
+.bnav-item{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;font-size:10px;color:var(--text2);padding:8px 4px 4px;cursor:pointer;border:none;background:none;}
+.bnav-item.active{color:var(--accent);}
+.bnav-icon{font-size:20px;line-height:1;}
+.mc{background:var(--card);border-radius:14px;padding:14px;margin:0 12px 10px;box-shadow:0 1px 6px rgba(0,0,0,.07);cursor:pointer;}
+.mc:active{opacity:.8;}
+.cr{display:flex;align-items:flex-start;gap:10px;margin-bottom:8px;}
+.av{width:40px;height:40px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;color:#fff;flex-shrink:0;}
+.cn{font-size:14px;font-weight:700;}
+.cs{font-size:11px;color:var(--text2);margin-top:2px;}
+.tags{display:flex;flex-wrap:wrap;gap:4px;}
+.tag{font-size:11px;background:var(--tag-bg);color:var(--tag-c);padding:3px 8px;border-radius:20px;font-weight:600;}
+.tag.gray{background:#f0f0f0;color:var(--text2);}
+.tag.sel{background:var(--primary);color:#fff;}
+.btn{border:none;border-radius:12px;padding:13px 20px;font-size:14px;font-weight:700;cursor:pointer;width:100%;transition:opacity .15s;font-family:inherit;}
+.btn:active{opacity:.8;}
+.btn-p{background:var(--accent);color:#fff;}
+.btn-s{background:transparent;color:var(--primary);border:1.5px solid var(--primary);}
+.inp{background:var(--card);border:1.5px solid var(--border);border-radius:12px;padding:12px 14px;font-size:14px;color:var(--text);width:100%;font-family:inherit;outline:none;}
+.inp:focus{border-color:var(--accent);}
+.inp.search{padding-left:38px;}
+.fg{background:var(--card);border-radius:12px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.06);}
+.fr{display:flex;align-items:center;padding:13px 14px;border-bottom:1px solid var(--border);gap:10px;}
+.fr:last-child{border-bottom:none;}
+.fk{font-size:12px;color:var(--text2);width:68px;flex-shrink:0;}
+.fv{font-size:13px;color:var(--text);flex:1;word-break:break-all;}
+.sl{font-size:11px;font-weight:700;color:var(--text2);letter-spacing:.5px;padding:14px 14px 6px;}
+.cb{width:24px;height:24px;border-radius:7px;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0;}
+.co{background:var(--accent);color:#fff;}
+.cx{background:#f0f0f0;color:var(--text3);border:1.5px solid #ddd;}
+.fab{position:absolute;bottom:70px;right:16px;width:52px;height:52px;background:var(--accent);border-radius:16px;box-shadow:0 4px 14px rgba(0,184,150,.35);display:flex;align-items:center;justify-content:center;font-size:26px;color:#fff;cursor:pointer;border:none;z-index:10;}
+.cam{margin:14px;height:185px;background:#1a2332;border-radius:16px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;color:rgba(255,255,255,.45);font-size:13px;position:relative;overflow:hidden;border:2px dashed rgba(255,255,255,.15);}
+.toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%);background:#1a2332;color:#fff;padding:10px 20px;border-radius:20px;font-size:13px;z-index:999;white-space:nowrap;animation:ti .2s ease;}
+@keyframes ti{from{opacity:0;transform:translateX(-50%) translateY(8px);}to{opacity:1;transform:translateX(-50%) translateY(0);}}
+.lo{position:fixed;inset:0;background:rgba(0,0,0,.45);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:998;gap:14px;}
+.lo-text{color:#fff;font-size:14px;max-width:280px;text-align:center;line-height:1.6;}
+.spin{width:40px;height:40px;border:3px solid rgba(255,255,255,.2);border-top-color:var(--accent);border-radius:50%;animation:sp .8s linear infinite;}
+@keyframes sp{to{transform:rotate(360deg);}}
+.mb{font-size:11px;font-weight:700;padding:3px 8px;border-radius:20px;}
+.m-h{background:#e8f5f0;color:var(--accent-d);}
+.m-m{background:#fff3e0;color:var(--warn);}
+.m-l{background:#f0f0f0;color:var(--text3);}
+.empty{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:60px 20px;gap:12px;color:var(--text2);text-align:center;}
+.empty-i{font-size:48px;opacity:.4;}
+.empty-t{font-size:16px;font-weight:700;color:var(--text);}
+.sp{font-size:11px;padding:5px 10px;border-radius:20px;font-weight:600;border:none;cursor:pointer;font-family:inherit;}
+.sp-a{background:#e8f5f0;color:var(--accent-d);}
+.sp-n{background:#ffe8e8;color:var(--danger);}
+.sp-q{background:#fff3e0;color:var(--warn);}
+.cc{position:absolute;width:18px;height:18px;border-color:var(--accent);border-style:solid;}
+.status-badge{display:inline-flex;align-items:center;gap:4px;font-size:11px;padding:3px 8px;border-radius:20px;font-weight:600;}
+.status-ok{background:#e8f5f0;color:var(--accent-d);}
+.status-ng{background:#ffe8e8;color:var(--danger);}
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="screen-home" class="screen hidden"></div>
+  <div id="screen-register" class="screen hidden"></div>
+  <div id="screen-confirm" class="screen hidden"></div>
+  <div id="screen-detail" class="screen hidden"></div>
+  <div id="screen-tags" class="screen hidden"></div>
+  <div id="screen-match" class="screen hidden"></div>
+  <div id="screen-settings" class="screen hidden"></div>
+</div>
+
+<script>
+// ===== CONFIG =====
+const DB_NAME = 'meishimatch_v1';
+const AVATARS = ['#1a3a5c','#00b896','#ff6b6b','#7c4dff','#ff9800','#2196f3','#e91e63','#009688'];
+const FIELD_LABELS = {name:'氏名',nameKana:'ふりがな',company:'会社名',department:'部署',title:'役職',email:'メール',phone:'電話',fax:'FAX',address:'住所',website:'Web',other:'その他'};
+const GEMINI_BASE = 'https://generativelanguage.googleapis.com/v1beta/models';
+const OLLAMA_DEFAULT = 'http://localhost:11434';
+
+// ===== STATE =====
+let db = null;
+let state = {
+  cards:[], filteredCards:[],
+  settings: loadSettings(),
+  availableModels: [],
+  pendingImg:null, pendingExt:null, pendingVis:{}, pendingMemo:'', pendingTags:[],
+  currentCard:null,
+  selTags:[], allTags:[],
+  navHistory:['home']
+};
+
+// ===== SETTINGS =====
+function loadSettings(){
+  try{const s=localStorage.getItem('mm_settings_v2');if(s)return JSON.parse(s);}catch(e){}
+  return{
+    provider:'gemini',
+    apiKey:'',
+    geminiModel:'gemini-2.0-flash',
+    ollamaUrl:'',
+    visionModel:'minicpm-v',
+    textModel:'qwen2.5:7b',
+    fieldRules:{
+      name:'always',nameKana:'ask',company:'always',department:'ask',
+      title:'always',email:'always',phone:'always',fax:'never',
+      address:'ask',website:'ask',other:'ask'
+    }
+  };
+}
+function saveSettings(s){state.settings=s;localStorage.setItem('mm_settings_v2',JSON.stringify(s));}
+
+// ===== AI API (直接呼び出し) =====
+
+async function callGemini(parts){
+  const s = state.settings;
+  if(!s.apiKey) throw new Error('Gemini APIキーが設定されていません。設定画面で入力してください。');
+  const model = s.geminiModel || 'gemini-2.0-flash';
+  const url = `${GEMINI_BASE}/${model}:generateContent?key=${s.apiKey}`;
+  const r = await fetch(url, {
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({
+      contents:[{parts}],
+      generationConfig:{temperature:0.1, maxOutputTokens:2048}
+    })
+  });
+  if(r.status===400||r.status===401||r.status===403){
+    const e = await r.json().catch(()=>({}));
+    throw new Error(e.error?.message || 'APIキーが無効です。設定を確認してください。');
+  }
+  if(!r.ok){const e=await r.json().catch(()=>({}));throw new Error(e.error?.message||`Geminiエラー(${r.status})`);}
+  const d = await r.json();
+  return d.candidates?.[0]?.content?.parts?.[0]?.text || '';
+}
+
+async function callOllama(prompt, images=null){
+  const s = state.settings;
+  const base = (s.ollamaUrl||'').replace(/\/$/,'') || OLLAMA_DEFAULT;
+  const model = images ? (s.visionModel||'minicpm-v') : (s.textModel||'qwen2.5:7b');
+  const body = {model, prompt, stream:false, options:{temperature:0.1, num_predict:2048}};
+  if(images) body.images = images;
+  let r;
+  try{
+    r = await fetch(`${base}/api/generate`, {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify(body)
+    });
+  }catch(e){
+    throw new Error(`Ollamaに接続できません（${base}）。起動しているか・CORS設定を確認してください。`);
+  }
+  if(!r.ok){const e=await r.json().catch(()=>({}));throw new Error(e.error||`Ollamaエラー(${r.status})`);}
+  const d = await r.json();
+  return d.response || '';
+}
+
+async function callAI(prompt, images=null){
+  if(state.settings.provider==='gemini'){
+    const parts = [{text:prompt}];
+    if(images) parts.push({inlineData:{mimeType:state.pendingImg?.mimeType||'image/jpeg', data:images[0]}});
+    return callGemini(parts);
+  }else{
+    return callOllama(prompt, images);
+  }
+}
+
+function extractJsonObject(text){
+  let m = text.match(/```(?:json)?\s*(\{[\s\S]*?\})\s*```/);
+  if(m) return JSON.parse(m[1]);
+  m = text.match(/\{[\s\S]*\}/);
+  if(m) return JSON.parse(m[0]);
+  throw new Error('JSONを抽出できませんでした');
+}
+function extractJsonArray(text){
+  let m = text.match(/```(?:json)?\s*(\[[\s\S]*?\])\s*```/);
+  if(m) return JSON.parse(m[1]);
+  m = text.match(/\[[\s\S]*\]/);
+  if(m) return JSON.parse(m[0]);
+  return [];
+}
+
+async function extractCard(b64, mime){
+  const prompt = 'Look at this business card image carefully and extract all text. Return ONLY a JSON object, no explanation:\n{"name":"氏名","nameKana":"ふりがな","company":"会社名","department":"部署名","title":"役職","email":["メール"],"phone":["電話番号"],"fax":"FAX番号","address":"住所","website":"WebサイトURL","other":"その他"}\nSet missing fields to null. Output JSON only.';
+  const text = await callAI(prompt, [b64]);
+  return extractJsonObject(text);
+}
+
+async function genTags(fields, memo){
+  const info = Object.entries(fields).filter(([,v])=>v&&(!Array.isArray(v)||v.length)).map(([k,v])=>`${k}:${Array.isArray(v)?v.join(','):v}`).join(' / ');
+  const prompt = `名刺情報: ${info}\n備考: ${memo||'なし'}\n上記から検索タグを5〜8個生成してください。業種・スキル・役職レベル・接点の観点で。#から始まる短い日本語タグをJSON配列のみで返してください。\n例: ["#営業","#IT","#マネージャー","#東京"]`;
+  const text = await callAI(prompt);
+  try{const r=extractJsonArray(text);return Array.isArray(r)?r:[];}catch{return [];}
+}
+
+async function matchSearch(query, cards){
+  const sums = cards.map(c=>({id:c.id,name:c.fields.name,company:c.fields.company,title:c.fields.title,tags:(c.tags||[]).join(' '),memo:c.memo||''}));
+  const prompt = `検索条件: "${query}"\n以下の名刺リストのマッチ度を評価し、JSON配列のみ返してください:\n[{"id":"...","score":"high"|"medium"|"low","reason":"理由20字以内"}]\n${JSON.stringify(sums)}`;
+  const text = await callAI(prompt);
+  try{const r=extractJsonArray(text);return Array.isArray(r)?r:[];}catch{return [];}
+}
+
+async function fetchOllamaModels(){
+  const base = (state.settings.ollamaUrl||'').replace(/\/$/,'') || OLLAMA_DEFAULT;
+  try{
+    const r = await fetch(`${base}/api/tags`);
+    if(!r.ok) return {ok:false,models:[]};
+    const d = await r.json();
+    return {ok:true, models:(d.models||[]).map(m=>m.name).sort(), url:base};
+  }catch(e){
+    return {ok:false, models:[], error:e.message, url:base};
+  }
+}
+
+// ===== INDEXEDDB =====
+async function initDB(){
+  return new Promise((res,rej)=>{
+    const req=indexedDB.open(DB_NAME,1);
+    req.onupgradeneeded=e=>{const d=e.target.result;if(!d.objectStoreNames.contains('cards'))d.createObjectStore('cards',{keyPath:'id'});};
+    req.onsuccess=e=>{db=e.target.result;res();};
+    req.onerror=()=>rej(req.error);
+  });
+}
+async function dbAll(){return new Promise((res,rej)=>{const tx=db.transaction('cards','readonly');const r=tx.objectStore('cards').getAll();r.onsuccess=()=>res(r.result.sort((a,b)=>b.createdAt-a.createdAt));r.onerror=()=>rej(r.error);});}
+async function dbSave(c){return new Promise((res,rej)=>{const tx=db.transaction('cards','readwrite');const r=tx.objectStore('cards').put(c);r.onsuccess=()=>res();r.onerror=()=>rej(r.error);});}
+async function dbDel(id){return new Promise((res,rej)=>{const tx=db.transaction('cards','readwrite');const r=tx.objectStore('cards').delete(id);r.onsuccess=()=>res();r.onerror=()=>rej(r.error);});}
+
+// ===== HELPERS =====
+function genId(){return Date.now().toString(36)+Math.random().toString(36).slice(2);}
+function avColor(n){let h=0;for(const c of(n||'?'))h=(h*31+c.charCodeAt(0))&0xffffffff;return AVATARS[Math.abs(h)%AVATARS.length];}
+function avInit(n){return(n||'?')[0]||'?';}
+function showToast(m){document.querySelectorAll('.toast').forEach(t=>t.remove());const t=document.createElement('div');t.className='toast';t.textContent=m;document.body.appendChild(t);setTimeout(()=>t.remove(),2500);}
+function showLoading(m='処理中...'){document.getElementById('mm-loading')?.remove();const el=document.createElement('div');el.className='lo';el.id='mm-loading';el.innerHTML=`<div class="spin"></div><div class="lo-text">${m}</div>`;document.body.appendChild(el);}
+function hideLoading(){document.getElementById('mm-loading')?.remove();}
+function readFile(f){return new Promise((res,rej)=>{const r=new FileReader();r.onload=e=>{const d=e.target.result;res({base64:d.split(',')[1],mimeType:f.type,dataUrl:d});};r.onerror=rej;r.readAsDataURL(f);});}
+function applyRules(ext){const vis={};const rules=state.settings.fieldRules;for(const[k,v]of Object.entries(ext)){if(v===null||v===undefined||(Array.isArray(v)&&!v.length)){vis[k]=false;continue;}const rule=rules[k]||'ask';vis[k]=rule==='never'?false:true;}return vis;}
+
+// ===== NAVIGATION =====
+function $id(id){return document.getElementById(id);}
+function navigate(screen,data={}){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.add('hidden'));
+  const el=$id('screen-'+screen);if(!el)return;
+  el.classList.remove('hidden');
+  const last=state.navHistory[state.navHistory.length-1];
+  if(last!==screen)state.navHistory.push(screen);
+  ({home:renderHome,register:renderRegister,confirm:renderConfirm,detail:()=>renderDetail(data.card||state.currentCard),tags:renderTagSearch,match:renderMatchSearch,settings:renderSettings})[screen]?.();
+}
+function goBack(){if(state.navHistory.length>1)state.navHistory.pop();navigate(state.navHistory[state.navHistory.length-1]||'home');}
+
+// ===== HOME =====
+async function renderHome(){
+  state.cards=await dbAll();state.filteredCards=[...state.cards];
+  const tagSet=new Set();state.cards.forEach(c=>(c.tags||[]).forEach(t=>tagSet.add(t)));
+  state.allTags=[...tagSet].sort();
+  const el=$id('screen-home');
+  el.innerHTML=`
+<div class="sb"><span>MeishiMatch</span><span>${state.cards.length}件</span></div>
+<div class="nb"><div class="nb-title">MeishiMatch</div><button class="nb-btn" onclick="navigate('settings')">⚙</button></div>
+<div class="sb-body">
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:12px 12px 4px;">
+    <button class="btn btn-p" style="font-size:13px;padding:12px 8px;" onclick="navigate('match')">🔍 マッチング検索</button>
+    <button class="btn btn-s" style="font-size:13px;padding:11px 8px;" onclick="navigate('tags')">🏷 タグで探す</button>
+  </div>
+  <div style="padding:6px 12px 8px;position:relative;">
+    <span style="position:absolute;left:26px;top:50%;transform:translateY(-50%);font-size:15px;opacity:.35;">🔎</span>
+    <input class="inp search" placeholder="氏名・会社・タグで検索" oninput="filterCards(this.value)">
+  </div>
+  <div class="sl" id="card-count">名刺 ${state.cards.length}件</div>
+  <div id="card-list" style="padding-bottom:80px;"></div>
+</div>
+<button class="fab" onclick="navigate('register')">＋</button>
+${bnav('home')}`;
+  renderCardList(state.filteredCards);
+}
+function filterCards(q){const l=q.toLowerCase();state.filteredCards=q?state.cards.filter(c=>{const f=c.fields;return(f.name||'').toLowerCase().includes(l)||(f.company||'').toLowerCase().includes(l)||(c.memo||'').toLowerCase().includes(l)||(c.tags||[]).some(t=>t.toLowerCase().includes(l));}):[ ...state.cards];$id('card-count').textContent=`名刺 ${state.filteredCards.length}件`;renderCardList(state.filteredCards);}
+function renderCardList(cards){const el=$id('card-list');if(!el)return;if(!cards.length){el.innerHTML=`<div class="empty"><div class="empty-i">📇</div><div class="empty-t">名刺がまだありません</div><div style="font-size:13px;">＋ボタンから最初の名刺を登録しましょう</div></div>`;return;}el.innerHTML=cards.map(c=>{const f=c.fields;const tags=(c.tags||[]).slice(0,4).map(t=>`<span class="tag">${t}</span>`).join('');return`<div class="mc" onclick="openCard('${c.id}')"><div class="cr"><div class="av" style="background:${c.color}">${c.initial}</div><div style="flex:1;min-width:0;"><div class="cn">${f.name||'（名前なし）'}</div><div class="cs">${[f.company,f.title].filter(Boolean).join(' · ')}</div></div></div><div class="tags">${tags}</div></div>`;}).join('');}
+function openCard(id){const c=state.cards.find(x=>x.id===id);if(c){state.currentCard=c;navigate('detail',{card:c});}}
+
+// ===== REGISTER =====
+function renderRegister(){
+  state.pendingImg=null;state.pendingExt=null;
+  $id('screen-register').innerHTML=`
+<div class="sb"><span>名刺登録</span><span></span></div>
+<div class="nb"><button class="nb-back" onclick="goBack()">‹</button><div class="nb-title">名刺を登録</div></div>
+<div class="sb-body">
+  <div class="cam" id="cam-area" onclick="trigAlbum()">
+    <div class="cc" style="top:12px;left:12px;border-top:2px solid #00b896;border-left:2px solid #00b896;border-radius:2px 0 0 0;"></div>
+    <div class="cc" style="top:12px;right:12px;border-top:2px solid #00b896;border-right:2px solid #00b896;border-radius:0 2px 0 0;"></div>
+    <div class="cc" style="bottom:12px;left:12px;border-bottom:2px solid #00b896;border-left:2px solid #00b896;border-radius:0 0 0 2px;"></div>
+    <div class="cc" style="bottom:12px;right:12px;border-bottom:2px solid #00b896;border-right:2px solid #00b896;border-radius:0 0 2px 0;"></div>
+    <div style="font-size:36px;opacity:.5;">📷</div>
+    <div>タップして画像を選択</div>
+  </div>
+  <input type="file" id="img-in" accept="image/*" style="display:none;" onchange="handleImg(this)">
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:0 14px;">
+    <button class="btn btn-p" style="font-size:13px;padding:12px;" onclick="trigCam()">📷 カメラで撮影</button>
+    <button class="btn btn-s" style="font-size:13px;padding:11px;" onclick="trigAlbum()">🖼 アルバムから</button>
+  </div>
+  <div style="margin:16px 14px 0;background:#fff;border-radius:12px;padding:14px;border:1px solid var(--border);">
+    <div style="font-size:11px;font-weight:700;color:var(--text2);margin-bottom:8px;">💡 きれいに読み取るには</div>
+    <div style="font-size:12px;color:var(--text2);line-height:1.9;">・明るい場所で撮影する<br>・名刺全体がフレームに収まるようにする<br>・反射・影がないように注意する</div>
+  </div>
+</div>`;
+}
+function trigCam(){const i=$id('img-in');i.setAttribute('capture','environment');i.click();}
+function trigAlbum(){const i=$id('img-in');i.removeAttribute('capture');i.click();}
+async function handleImg(input){
+  const file=input.files?.[0];if(!file)return;input.value='';
+  try{
+    const data=await readFile(file);state.pendingImg=data;
+    $id('cam-area').innerHTML=`<img src="${data.dataUrl}" style="width:100%;height:100%;object-fit:cover;border-radius:0;">`;
+    showLoading('名刺を読み取り中...');
+    const ext=await extractCard(data.base64,data.mimeType);
+    hideLoading();
+    state.pendingExt=ext;state.pendingVis=applyRules(ext);state.pendingMemo='';state.pendingTags=[];
+    navigate('confirm');
+  }catch(err){hideLoading();showToast('✗ '+err.message);}
+}
+
+// ===== CONFIRM =====
+function renderConfirm(){
+  const ext=state.pendingExt;
+  const keys=['name','nameKana','company','department','title','email','phone','fax','address','website','other'];
+  const rows=keys.map(k=>{
+    const v=ext[k];if(!v||(Array.isArray(v)&&!v.length))return'';
+    const val=Array.isArray(v)?v.join(', '):v;
+    const on=state.pendingVis[k]!==false;
+    return`<div class="fr" id="row-${k}" style="${on?'':'opacity:.4;'}">
+<span class="fk">${FIELD_LABELS[k]||k}</span>
+<span class="fv" style="font-size:${k==='email'||k==='address'?'11px':'13px'};">${val}</span>
+<button class="cb ${on?'co':'cx'}" onclick="toggleField('${k}')">${on?'✓':'✗'}</button></div>`;
+  }).filter(Boolean).join('');
+  $id('screen-confirm').innerHTML=`
+<div class="sb"><span>読み取り確認</span><span></span></div>
+<div class="nb"><button class="nb-back" onclick="goBack()">‹</button><div class="nb-title">読み取り確認</div></div>
+<div class="sb-body">
+  ${state.pendingImg?`<div style="padding:10px 14px 0;"><img src="${state.pendingImg.dataUrl}" style="width:100%;height:110px;object-fit:cover;border-radius:12px;"></div>`:''}
+  <div class="sl">情報の要/不要を選択</div>
+  <div class="fg" style="margin:0 12px;">${rows||'<div class="fr"><span class="fv" style="color:var(--text2);">情報を読み取れませんでした</span></div>'}</div>
+  <div class="sl">備考（任意）</div>
+  <div style="padding:0 12px;">
+    <textarea class="inp" rows="3" id="memo-in" placeholder="展示会での名刺交換・紹介者・話した内容など" style="resize:none;font-size:13px;">${state.pendingMemo}</textarea>
+  </div>
+  <div class="sl">タグ <span id="tag-st" style="font-weight:400;color:var(--text3);font-size:10px;">（保存時に自動生成）</span></div>
+  <div style="padding:0 12px 8px;"><div class="tags" id="tag-list"></div></div>
+  <div style="padding:4px 14px;display:flex;gap:8px;">
+    <button class="btn btn-s" style="width:auto;padding:12px 14px;font-size:12px;white-space:nowrap;" onclick="previewTags()">🏷 タグをプレビュー</button>
+    <button class="btn btn-p" onclick="doSaveCard()">保存する</button>
+  </div>
+  <div style="height:24px;"></div>
+</div>`;
+}
+function toggleField(k){const on=!(state.pendingVis[k]!==false);state.pendingVis[k]=on;const row=$id('row-'+k);const btn=row.querySelector('.cb');row.style.opacity=on?'':'0.4';btn.className=`cb ${on?'co':'cx'}`;btn.textContent=on?'✓':'✗';}
+async function previewTags(){const memo=$id('memo-in')?.value||'';const fields={};for(const[k,v]of Object.entries(state.pendingExt)){if(state.pendingVis[k]!==false)fields[k]=v;}try{showLoading('タグを生成中...');const tags=await genTags(fields,memo);hideLoading();state.pendingTags=tags;renderTagList();$id('tag-st').textContent=`${tags.length}個生成`;}catch(err){hideLoading();showToast('✗ '+err.message);}}
+function renderTagList(){const el=$id('tag-list');if(!el)return;el.innerHTML=state.pendingTags.map(t=>`<span class="tag" style="cursor:pointer;" onclick="rmTag('${t.replace(/'/g,"\\'")}');">${t} ×</span>`).join('')+`<span class="tag gray" style="cursor:pointer;" onclick="addTagPrompt()">＋ 追加</span>`;}
+function rmTag(tag){state.pendingTags=state.pendingTags.filter(t=>t!==tag);renderTagList();}
+function addTagPrompt(){const t=prompt('タグを入力（例: エンジニア）');if(!t)return;const tag=t.startsWith('#')?t:'#'+t;if(!state.pendingTags.includes(tag))state.pendingTags.push(tag);renderTagList();}
+async function doSaveCard(){
+  const memo=$id('memo-in')?.value||'';
+  const fields={};for(const[k,v]of Object.entries(state.pendingExt)){if(state.pendingVis[k]!==false)fields[k]=v;}
+  let tags=state.pendingTags;
+  if(!tags.length){try{showLoading('タグを生成中...');tags=await genTags(fields,memo);hideLoading();}catch(e){hideLoading();tags=[];}}
+  const card={id:genId(),createdAt:Date.now(),updatedAt:Date.now(),imageDataUrl:state.pendingImg?.dataUrl||null,fields,fieldVisibility:{...state.pendingVis},tags,memo,color:avColor(fields.name||'?'),initial:avInit(fields.name||'?')};
+  try{await dbSave(card);showToast('✓ 名刺を保存しました');navigate('home');}
+  catch(e){showToast('✗ 保存に失敗しました');}
+}
+
+// ===== DETAIL =====
+function renderDetail(card){
+  if(!card){navigate('home');return;}
+  const f=card.fields;
+  const keys=['name','nameKana','company','department','title','email','phone','fax','address','website','other'];
+  const rows=keys.map(k=>{const v=f[k];if(!v||(Array.isArray(v)&&!v.length))return'';const val=Array.isArray(v)?v.join(', '):v;return`<div class="fr"><span class="fk">${FIELD_LABELS[k]||k}</span><span class="fv" style="font-size:${k==='email'||k==='address'?'11px':'13px'};">${val}</span></div>`;}).filter(Boolean).join('');
+  $id('screen-detail').innerHTML=`
+<div class="sb"><span>名刺詳細</span><span></span></div>
+<div class="nb"><button class="nb-back" onclick="goBack()">‹</button><div class="nb-title">名刺詳細</div><button class="nb-btn" style="background:rgba(255,71,87,.25);color:#ffa0a0;" onclick="doDeleteCard('${card.id}')">削除</button></div>
+<div class="sb-body">
+  ${card.imageDataUrl?`<div style="padding:12px 14px 0;"><img src="${card.imageDataUrl}" style="width:100%;height:130px;object-fit:cover;border-radius:12px;"></div>`:''}
+  <div style="display:flex;align-items:center;gap:12px;padding:14px 14px 4px;">
+    <div class="av" style="background:${card.color};width:52px;height:52px;font-size:20px;">${card.initial}</div>
+    <div><div style="font-size:18px;font-weight:700;">${f.name||'（名前なし）'}</div><div style="font-size:13px;color:var(--text2);">${[f.company,f.title].filter(Boolean).join(' · ')}</div></div>
+  </div>
+  <div class="sl">連絡先情報</div>
+  <div class="fg" style="margin:0 12px;">${rows||'<div class="fr"><span class="fv" style="color:var(--text2);">情報なし</span></div>'}</div>
+  ${(card.tags||[]).length?`<div class="sl">タグ</div><div style="padding:0 12px 4px;"><div class="tags">${card.tags.map(t=>`<span class="tag">${t}</span>`).join('')}</div></div>`:''}
+  ${card.memo?`<div class="sl">備考</div><div style="margin:0 12px;background:#fff;border-radius:12px;padding:14px;font-size:13px;line-height:1.7;border:1px solid var(--border);">${card.memo}</div>`:''}
+  <div style="padding:14px;font-size:11px;color:var(--text3);">登録: ${new Date(card.createdAt).toLocaleDateString('ja-JP')}</div>
+  <div style="height:20px;"></div>
+</div>`;}
+async function doDeleteCard(id){if(!confirm('この名刺を削除しますか？'))return;await dbDel(id);showToast('削除しました');navigate('home');}
+
+// ===== TAG SEARCH =====
+function renderTagSearch(){state.selTags=[];renderTagContent();}
+function renderTagContent(){
+  const el=$id('screen-tags');
+  const filtered=state.selTags.length?state.cards.filter(c=>state.selTags.every(t=>(c.tags||[]).includes(t))):[];
+  const selHTML=state.selTags.map(t=>`<span class="tag sel" style="cursor:pointer;" onclick="deselectTag('${t.replace(/'/g,"\\'")}');">${t} ×</span>`).join('');
+  const allHTML=state.allTags.map(t=>{const s=state.selTags.includes(t);return`<span class="tag ${s?'sel':'gray'}" style="cursor:pointer;" onclick="${s?`deselectTag('${t.replace(/'/g,"\\'")}')`:` selectTag('${t.replace(/'/g,"\\'")}')` }">${t}</span>`;}).join('');
+  el.innerHTML=`
+<div class="sb"><span>タグ検索</span><span></span></div>
+<div class="nb"><div class="nb-title">タグで探す</div></div>
+<div class="sb-body">
+  ${state.selTags.length?`<div class="sl">選択中のタグ</div><div style="padding:0 12px 8px;"><div class="tags">${selHTML}</div></div>`:''}
+  <div class="sl">全タグ ${state.allTags.length}件</div>
+  <div style="padding:0 12px 8px;">${state.allTags.length?`<div class="tags">${allHTML}</div>`:'<div style="font-size:13px;color:var(--text3);padding:8px 2px;">タグがまだありません</div>'}</div>
+  ${state.selTags.length?`<div class="sl">検索結果 ${filtered.length}件</div>${filtered.length?filtered.map(c=>{const f=c.fields;const tags=(c.tags||[]).slice(0,4).map(t=>`<span class="tag">${t}</span>`).join('');return`<div class="mc" onclick="openCard('${c.id}')"><div class="cr"><div class="av" style="background:${c.color}">${c.initial}</div><div style="flex:1;min-width:0;"><div class="cn">${f.name||'（名前なし）'}</div><div class="cs">${[f.company,f.title].filter(Boolean).join(' · ')}</div></div></div><div class="tags">${tags}</div></div>`;}).join(''):'<div class="empty"><div class="empty-i">😔</div><div class="empty-t">該当なし</div></div>'}`:'<div style="padding:24px 14px;font-size:13px;color:var(--text2);text-align:center;">タグをタップして絞り込み</div>'}
+  <div style="height:10px;"></div>
+</div>
+${bnav('tags')}`;
+}
+function selectTag(t){if(!state.selTags.includes(t))state.selTags.push(t);renderTagContent();}
+function deselectTag(t){state.selTags=state.selTags.filter(x=>x!==t);renderTagContent();}
+
+// ===== MATCH SEARCH =====
+function renderMatchSearch(){
+  $id('screen-match').innerHTML=`
+<div class="sb"><span>マッチング検索</span><span></span></div>
+<div class="nb"><div class="nb-title">マッチング検索</div></div>
+<div class="sb-body">
+  <div style="padding:14px 14px 8px;">
+    <div style="font-size:13px;color:var(--text2);margin-bottom:8px;">どんな人を探していますか？</div>
+    <textarea class="inp" id="match-in" rows="3" placeholder="例: Reactが得意なエンジニアを探している&#10;例: マーケティング経験者が必要&#10;例: デザインの相談ができる人" style="resize:none;font-size:13px;"></textarea>
+  </div>
+  <div style="padding:0 14px 12px;"><button class="btn btn-p" onclick="doMatch()">🔍 検索する</button></div>
+  <div id="match-res"></div>
+  <div style="height:10px;"></div>
+</div>
+${bnav('match')}`;
+}
+async function doMatch(){
+  const q=$id('match-in')?.value?.trim();
+  if(!q){showToast('検索条件を入力してください');return;}
+  if(!state.cards.length){showToast('名刺が登録されていません');return;}
+  try{
+    showLoading('マッチングを評価中...');
+    const results=await matchSearch(q,state.cards);hideLoading();
+    const el=$id('match-res');
+    if(!results.length){el.innerHTML=`<div class="empty"><div class="empty-i">🤔</div><div class="empty-t">結果なし</div><div style="font-size:13px;">別の条件で試してみてください</div></div>`;return;}
+    const order={high:0,medium:1,low:2};
+    const sorted=[...results].sort((a,b)=>(order[a.score]||2)-(order[b.score]||2));
+    const badgeMap={high:['m-h','★★★ 高'],medium:['m-m','★★☆ 中'],low:['m-l','★☆☆ 低']};
+    el.innerHTML=`<div class="sl">検索結果 ${sorted.filter(r=>r.score!=='low').length}件 ヒット</div>`+sorted.map(r=>{
+      const c=state.cards.find(x=>x.id===r.id);if(!c)return'';
+      const f=c.fields;const tags=(c.tags||[]).slice(0,3).map(t=>`<span class="tag">${t}</span>`).join('');
+      const[bcls,blabel]=badgeMap[r.score]||['m-l','★☆☆'];
+      return`<div class="mc" onclick="openCard('${c.id}')">
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+<div class="cr" style="margin:0;gap:8px;"><div class="av" style="background:${c.color};width:36px;height:36px;font-size:13px;">${c.initial}</div>
+<div><div class="cn" style="font-size:13px;">${f.name||'（？）'}</div><div class="cs">${f.company||''}</div></div></div>
+<span class="mb ${bcls}">${blabel}</span></div>
+<div class="tags">${tags}</div>
+${r.reason?`<div style="margin-top:6px;font-size:11px;color:var(--text2);">💬 ${r.reason}</div>`:''}</div>`;
+    }).join('');
+  }catch(err){hideLoading();showToast('✗ '+err.message);}
+}
+
+// ===== SETTINGS =====
+async function renderSettings(){
+  const s=state.settings;
+  const isGemini=s.provider==='gemini';
+  const keys=['name','nameKana','company','department','title','email','phone','fax','address','website','other'];
+  const rows=keys.map(k=>{const rule=s.fieldRules[k]||'ask';return`<div class="fr"><div class="fv" style="font-size:13px;">${FIELD_LABELS[k]||k}</div><button class="sp ${rule==='always'?'sp-a':rule==='never'?'sp-n':'sp-q'}" id="rule-${k}" onclick="cycleRule('${k}')">${rule==='always'?'常に表示':rule==='never'?'常に非表示':'毎回確認'}</button></div>`;}).join('');
+
+  $id('screen-settings').innerHTML=`
+<div class="sb"><span>設定</span><span></span></div>
+<div class="nb"><button class="nb-back" onclick="goBack()">‹</button><div class="nb-title">設定</div><button class="nb-btn" onclick="doSaveSettings()">保存</button></div>
+<div class="sb-body">
+  <div class="sl">⚡ AIプロバイダー</div>
+  <div style="padding:0 12px 8px;display:flex;gap:8px;">
+    <button id="prov-gemini" class="btn ${isGemini?'btn-p':'btn-s'}" style="padding:10px;font-size:13px;" onclick="switchProvider('gemini')">✨ Gemini API</button>
+    <button id="prov-ollama" class="btn ${!isGemini?'btn-p':'btn-s'}" style="padding:10px;font-size:13px;" onclick="switchProvider('ollama')">🖥 Ollama</button>
+  </div>
+
+  <div id="pane-gemini" style="display:${isGemini?'block':'none'}">
+    <div class="sl">✨ Gemini API キー</div>
+    <div style="padding:0 12px 4px;">
+      <div style="display:flex;gap:8px;">
+        <input class="inp" id="api-key-in" type="password" placeholder="AIzaSy..." value="${s.apiKey||''}" style="flex:1;">
+        <button class="btn btn-s" onclick="toggleApiKey()" style="width:auto;padding:12px;">👁</button>
+      </div>
+      <div style="font-size:11px;color:var(--text2);margin-top:6px;">
+        <a href="https://aistudio.google.com/app/apikey" target="_blank" style="color:var(--accent);">Google AI Studio</a> で無料取得できます
+      </div>
+    </div>
+    <div class="sl">モデル</div>
+    <div style="padding:0 12px 12px;">
+      <select class="inp" id="gemini-model-sel" style="font-size:13px;">
+        <option value="gemini-2.0-flash" ${(s.geminiModel||'gemini-2.0-flash')==='gemini-2.0-flash'?'selected':''}>gemini-2.0-flash（推奨）</option>
+        <option value="gemini-2.5-flash-preview-04-17" ${s.geminiModel==='gemini-2.5-flash-preview-04-17'?'selected':''}>gemini-2.5-flash-preview（最新）</option>
+        <option value="gemini-1.5-flash" ${s.geminiModel==='gemini-1.5-flash'?'selected':''}>gemini-1.5-flash（安定版）</option>
+      </select>
+    </div>
+  </div>
+
+  <div id="pane-ollama" style="display:${!isGemini?'block':'none'}">
+    <div class="sl">🤖 Ollama URL</div>
+    <div style="padding:0 12px 4px;">
+      <input class="inp" id="ollama-url-in" type="text"
+        placeholder="空欄 = localhost:11434　例: https://xxx.ngrok.io"
+        value="${s.ollamaUrl||''}" style="font-size:12px;">
+      <div style="font-size:11px;color:var(--text2);margin-top:5px;line-height:1.7;">
+        ⚠ ブラウザから直接Ollamaを呼ぶため CORS 設定が必要です<br>
+        <code style="background:#f0f4f8;padding:1px 5px;border-radius:3px;font-size:10px;">OLLAMA_ORIGINS=* ollama serve</code>
+      </div>
+    </div>
+    <div id="ollama-status" style="padding:4px 12px 4px;"></div>
+    <div class="fg" style="margin:0 12px 4px;">
+      <div class="fr" style="flex-wrap:wrap;gap:6px;">
+        <span class="fk">名刺読取</span>
+        <select class="inp" id="vision-model-sel" style="font-size:12px;padding:6px 8px;flex:1;min-width:120px;">
+          <option value="${s.visionModel||'minicpm-v'}">${s.visionModel||'minicpm-v'}</option>
+        </select>
+      </div>
+      <div class="fr" style="flex-wrap:wrap;gap:6px;">
+        <span class="fk">タグ/検索</span>
+        <select class="inp" id="text-model-sel" style="font-size:12px;padding:6px 8px;flex:1;min-width:120px;">
+          <option value="${s.textModel||'qwen2.5:7b'}">${s.textModel||'qwen2.5:7b'}</option>
+        </select>
+      </div>
+    </div>
+    <div style="padding:4px 12px 12px;">
+      <button class="btn btn-s" style="font-size:12px;padding:10px;" onclick="reloadOllamaModels()">🔄 接続して一覧を更新</button>
+    </div>
+  </div>
+
+  <div class="sl">読み取りフィールドの表示ルール</div>
+  <div class="fg" style="margin:0 12px;">${rows}</div>
+  <div style="padding:6px 14px 12px;font-size:11px;color:var(--text2);">変更は次回の名刺登録から適用されます</div>
+  <div class="sl">データ管理</div>
+  <div class="fg" style="margin:0 12px;">
+    <div class="fr" onclick="doExport()" style="cursor:pointer;">
+      <div class="fv">データをエクスポート（JSON）</div><span style="color:var(--text2);">›</span>
+    </div>
+    <div class="fr" onclick="doClearAll()" style="cursor:pointer;border-bottom:none;">
+      <div class="fv" style="color:var(--danger);">全データを削除</div><span style="color:var(--danger);">›</span>
+    </div>
+  </div>
+  <div style="padding:16px 14px;font-size:11px;color:var(--text3);text-align:center;">MeishiMatch Standalone · データはこのブラウザのみに保存されます</div>
+  <div style="height:20px;"></div>
+</div>
+${bnav('settings')}`;
+}
+
+function switchProvider(p){
+  state.settings.provider=p;
+  const isGemini=p==='gemini';
+  $id('prov-gemini').className='btn '+(isGemini?'btn-p':'btn-s');
+  $id('prov-ollama').className='btn '+(!isGemini?'btn-p':'btn-s');
+  $id('pane-gemini').style.display=isGemini?'block':'none';
+  $id('pane-ollama').style.display=isGemini?'none':'block';
+  if(!isGemini) reloadOllamaModels();
+}
+function toggleApiKey(){const i=$id('api-key-in');if(i)i.type=i.type==='password'?'text':'password';}
+
+async function reloadOllamaModels(){
+  const statusEl=$id('ollama-status');
+  const vs=$id('vision-model-sel');
+  const ts=$id('text-model-sel');
+  if(!vs||!ts)return;
+  const urlInput=$id('ollama-url-in');
+  if(urlInput)state.settings.ollamaUrl=urlInput.value.trim();
+  if(statusEl)statusEl.innerHTML='<div style="font-size:11px;color:var(--text2);">⏳ Ollamaに接続中...</div>';
+  const result=await fetchOllamaModels();
+  if(!result.ok||!result.models.length){
+    const hint=state.settings.ollamaUrl?`URL確認: ${state.settings.ollamaUrl}`:'<code style="background:#f0f4f8;padding:1px 4px;border-radius:3px;">OLLAMA_ORIGINS=* ollama serve</code> で起動してください';
+    if(statusEl)statusEl.innerHTML=`<div class="status-badge status-ng" style="font-size:11px;">✗ 接続失敗</div><div style="font-size:11px;color:var(--text2);margin-top:4px;">${hint}</div>`;
+    return;
+  }
+  if(statusEl)statusEl.innerHTML=`<div class="status-badge status-ok">✓ 接続済み（${result.models.length}モデル） — ${result.url}</div>`;
+  state.availableModels=result.models;
+  const curV=state.settings.visionModel||'minicpm-v';
+  const curT=state.settings.textModel||'qwen2.5:7b';
+  const makeOpts=(cur)=>result.models.map(m=>`<option value="${m}" ${m===cur?'selected':''}>${m}</option>`).join('');
+  vs.innerHTML=makeOpts(curV);
+  ts.innerHTML=makeOpts(curT);
+}
+
+function cycleRule(k){const cycle=['always','ask','never'];const cur=state.settings.fieldRules[k]||'ask';const next=cycle[(cycle.indexOf(cur)+1)%cycle.length];state.settings.fieldRules[k]=next;const btn=$id('rule-'+k);btn.className=`sp ${next==='always'?'sp-a':next==='never'?'sp-n':'sp-q'}`;btn.textContent=next==='always'?'常に表示':next==='never'?'常に非表示':'毎回確認';}
+
+function doSaveSettings(){
+  state.settings.provider=state.settings.provider||'gemini';
+  if(state.settings.provider==='gemini'){
+    state.settings.apiKey=$id('api-key-in')?.value?.trim()||'';
+    state.settings.geminiModel=$id('gemini-model-sel')?.value||'gemini-2.0-flash';
+  }else{
+    state.settings.ollamaUrl=$id('ollama-url-in')?.value?.trim()||'';
+    state.settings.visionModel=$id('vision-model-sel')?.value||'minicpm-v';
+    state.settings.textModel=$id('text-model-sel')?.value||'qwen2.5:7b';
+  }
+  saveSettings(state.settings);
+  showToast('✓ 設定を保存しました');
+}
+
+async function doExport(){const cards=await dbAll();const blob=new Blob([JSON.stringify(cards,null,2)],{type:'application/json'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=`meishimatch_${new Date().toISOString().slice(0,10)}.json`;document.body.appendChild(a);a.click();a.remove();URL.revokeObjectURL(url);showToast('📦 エクスポートしました');}
+async function doClearAll(){if(!confirm('全ての名刺データを削除します。よろしいですか？'))return;const cards=await dbAll();for(const c of cards)await dbDel(c.id);showToast('🗑 データを削除しました');navigate('home');}
+
+// ===== BOTTOM NAV =====
+function bnav(active){const items=[{id:'home',i:'🏠',l:'ホーム',s:'home'},{id:'tags',i:'🏷',l:'タグ',s:'tags'},{id:'match',i:'🔍',l:'検索',s:'match'},{id:'settings',i:'⚙',l:'設定',s:'settings'}];return`<div class="bnav">${items.map(it=>`<button class="bnav-item ${it.id===active?'active':''}" onclick="navigate('${it.s}')"><span class="bnav-icon">${it.i}</span>${it.l}</button>`).join('')}</div>`;}
+
+// ===== INIT =====
+(async function(){
+  try{
+    await initDB();
+    if(!state.settings.apiKey && state.settings.provider==='gemini'){
+      navigate('settings');
+    }else{
+      navigate('home');
+    }
+  }catch(e){
+    document.getElementById('app').innerHTML=`<div class="empty" style="height:100vh;"><div class="empty-i">⚠️</div><div class="empty-t">初期化エラー</div><div style="font-size:13px;">${e.message}</div></div>`;
+  }
+})();
+</script>
+</body>
+</html>
