@@ -114,6 +114,13 @@ let state = {
   navHistory:['home']
 };
 
+// ===== AI 有効判定 =====
+function hasAI(){
+  const s = state.settings;
+  if(s.provider === 'gemini') return !!s.apiKey;
+  return true; // ollama は URL不問で試みる
+}
+
 // ===== SETTINGS =====
 function loadSettings(){
   try{const s=localStorage.getItem('mm_settings_v2');if(s)return JSON.parse(s);}catch(e){}
@@ -319,19 +326,36 @@ function renderRegister(){
     <button class="btn btn-p" style="font-size:13px;padding:12px;" onclick="trigCam()">📷 カメラで撮影</button>
     <button class="btn btn-s" style="font-size:13px;padding:11px;" onclick="trigAlbum()">🖼 アルバムから</button>
   </div>
-  <div style="margin:16px 14px 0;background:#fff;border-radius:12px;padding:14px;border:1px solid var(--border);">
-    <div style="font-size:11px;font-weight:700;color:var(--text2);margin-bottom:8px;">💡 きれいに読み取るには</div>
-    <div style="font-size:12px;color:var(--text2);line-height:1.9;">・明るい場所で撮影する<br>・名刺全体がフレームに収まるようにする<br>・反射・影がないように注意する</div>
+  <div style="padding:8px 14px 0;">
+    <button class="btn btn-s" style="font-size:13px;padding:11px;" onclick="openManualForm()">✏️ 手動で入力</button>
   </div>
+  ${!hasAI()?`<div style="margin:12px 14px 0;background:#fff3e0;border-radius:12px;padding:12px 14px;border:1px solid #ffe082;">
+    <div style="font-size:11px;font-weight:700;color:#e65100;margin-bottom:4px;">⚠ AI未設定</div>
+    <div style="font-size:11px;color:#bf360c;line-height:1.7;">写真を撮ると手動入力フォームに移ります。<br>自動読み取りには設定画面でAPIを設定してください。</div>
+  </div>`:'<div style="margin:16px 14px 0;background:#fff;border-radius:12px;padding:14px;border:1px solid var(--border);"><div style="font-size:11px;font-weight:700;color:var(--text2);margin-bottom:8px;">💡 きれいに読み取るには</div><div style="font-size:12px;color:var(--text2);line-height:1.9;">・明るい場所で撮影する<br>・名刺全体がフレームに収まるようにする<br>・反射・影がないように注意する</div></div>'}
 </div>`;
 }
 function trigCam(){const i=$id('img-in');i.setAttribute('capture','environment');i.click();}
 function trigAlbum(){const i=$id('img-in');i.removeAttribute('capture');i.click();}
+function openManualForm(){
+  state.pendingImg=null;
+  state.pendingExt={name:null,nameKana:null,company:null,department:null,title:null,email:[],phone:[],fax:null,address:null,website:null,other:null};
+  state.pendingVis=applyRules(state.pendingExt);state.pendingMemo='';state.pendingTags=[];
+  navigate('confirm');
+}
+
 async function handleImg(input){
   const file=input.files?.[0];if(!file)return;input.value='';
   try{
     const data=await readFile(file);state.pendingImg=data;
     $id('cam-area').innerHTML=`<img src="${data.dataUrl}" style="width:100%;height:100%;object-fit:cover;border-radius:0;">`;
+    if(!hasAI()){
+      // AI未設定 → 写真だけ保持して手動フォームへ
+      state.pendingExt={name:null,nameKana:null,company:null,department:null,title:null,email:[],phone:[],fax:null,address:null,website:null,other:null};
+      state.pendingVis=applyRules(state.pendingExt);state.pendingMemo='';state.pendingTags=[];
+      navigate('confirm');
+      return;
+    }
     showLoading('名刺を読み取り中...');
     const ext=await extractCard(data.base64,data.mimeType);
     hideLoading();
@@ -344,30 +368,50 @@ async function handleImg(input){
 function renderConfirm(){
   const ext=state.pendingExt;
   const keys=['name','nameKana','company','department','title','email','phone','fax','address','website','other'];
-  const rows=keys.map(k=>{
-    const v=ext[k];if(!v||(Array.isArray(v)&&!v.length))return'';
-    const val=Array.isArray(v)?v.join(', '):v;
-    const on=state.pendingVis[k]!==false;
-    return`<div class="fr" id="row-${k}" style="${on?'':'opacity:.4;'}">
+  const isManual = !hasAI();
+
+  // AI有り: 読み取り結果を表示・選択。AI無し: 全フィールド入力フォーム
+  const rows = isManual
+    ? keys.map(k=>{
+        const v=ext[k];
+        const val=Array.isArray(v)?v.join(', '):(v||'');
+        return`<div class="fr">
+<span class="fk">${FIELD_LABELS[k]||k}</span>
+<input class="inp" id="field-${k}" value="${val.replace(/"/g,'&quot;')}"
+  placeholder="${FIELD_LABELS[k]||k}"
+  style="font-size:12px;padding:6px 8px;flex:1;border-radius:8px;"></div>`;
+      }).join('')
+    : keys.map(k=>{
+        const v=ext[k];if(!v||(Array.isArray(v)&&!v.length))return'';
+        const val=Array.isArray(v)?v.join(', '):v;
+        const on=state.pendingVis[k]!==false;
+        return`<div class="fr" id="row-${k}" style="${on?'':'opacity:.4;'}">
 <span class="fk">${FIELD_LABELS[k]||k}</span>
 <span class="fv" style="font-size:${k==='email'||k==='address'?'11px':'13px'};">${val}</span>
 <button class="cb ${on?'co':'cx'}" onclick="toggleField('${k}')">${on?'✓':'✗'}</button></div>`;
-  }).filter(Boolean).join('');
+      }).filter(Boolean).join('');
+
+  const title = isManual ? '手動入力' : '読み取り確認';
+  const noAIInfo = isManual ? '<div style="margin:0 12px 4px;background:#f0f4f8;border-radius:10px;padding:10px 12px;font-size:11px;color:var(--text2);">✏️ 直接入力してください。AIを設定するとOCRで自動入力できます。</div>' : '';
+  const tagHint = isManual ? '（手動で追加）' : '（保存時に自動生成）';
+  const tagBtn = hasAI() ? `<button class="btn btn-s" style="width:auto;padding:12px 14px;font-size:12px;white-space:nowrap;" onclick="previewTags()">🏷 タグをプレビュー</button>` : '';
+
   $id('screen-confirm').innerHTML=`
-<div class="sb"><span>読み取り確認</span><span></span></div>
-<div class="nb"><button class="nb-back" onclick="goBack()">‹</button><div class="nb-title">読み取り確認</div></div>
+<div class="sb"><span>${title}</span><span></span></div>
+<div class="nb"><button class="nb-back" onclick="goBack()">‹</button><div class="nb-title">${title}</div></div>
 <div class="sb-body">
   ${state.pendingImg?`<div style="padding:10px 14px 0;"><img src="${state.pendingImg.dataUrl}" style="width:100%;height:110px;object-fit:cover;border-radius:12px;"></div>`:''}
-  <div class="sl">情報の要/不要を選択</div>
+  ${noAIInfo}
+  <div class="sl">${isManual?'名刺情報を入力':'情報の要/不要を選択'}</div>
   <div class="fg" style="margin:0 12px;">${rows||'<div class="fr"><span class="fv" style="color:var(--text2);">情報を読み取れませんでした</span></div>'}</div>
   <div class="sl">備考（任意）</div>
   <div style="padding:0 12px;">
     <textarea class="inp" rows="3" id="memo-in" placeholder="展示会での名刺交換・紹介者・話した内容など" style="resize:none;font-size:13px;">${state.pendingMemo}</textarea>
   </div>
-  <div class="sl">タグ <span id="tag-st" style="font-weight:400;color:var(--text3);font-size:10px;">（保存時に自動生成）</span></div>
+  <div class="sl">タグ <span id="tag-st" style="font-weight:400;color:var(--text3);font-size:10px;">${tagHint}</span></div>
   <div style="padding:0 12px 8px;"><div class="tags" id="tag-list"></div></div>
   <div style="padding:4px 14px;display:flex;gap:8px;">
-    <button class="btn btn-s" style="width:auto;padding:12px 14px;font-size:12px;white-space:nowrap;" onclick="previewTags()">🏷 タグをプレビュー</button>
+    ${tagBtn}
     <button class="btn btn-p" onclick="doSaveCard()">保存する</button>
   </div>
   <div style="height:24px;"></div>
@@ -380,9 +424,24 @@ function rmTag(tag){state.pendingTags=state.pendingTags.filter(t=>t!==tag);rende
 function addTagPrompt(){const t=prompt('タグを入力（例: エンジニア）');if(!t)return;const tag=t.startsWith('#')?t:'#'+t;if(!state.pendingTags.includes(tag))state.pendingTags.push(tag);renderTagList();}
 async function doSaveCard(){
   const memo=$id('memo-in')?.value||'';
-  const fields={};for(const[k,v]of Object.entries(state.pendingExt)){if(state.pendingVis[k]!==false)fields[k]=v;}
+  let fields={};
+  const keys=['name','nameKana','company','department','title','email','phone','fax','address','website','other'];
+  if(!hasAI()){
+    // 手動入力フォームから値を収集
+    for(const k of keys){
+      const val=($id('field-'+k)?.value||'').trim();
+      if(!val){fields[k]=null;continue;}
+      fields[k]=(k==='email'||k==='phone')?val.split(/[,、]/).map(s=>s.trim()).filter(Boolean):val;
+    }
+  }else{
+    for(const[k,v]of Object.entries(state.pendingExt)){if(state.pendingVis[k]!==false)fields[k]=v;}
+  }
+  // 名前が空なら警告
+  if(!fields.name){showToast('氏名を入力してください');return;}
   let tags=state.pendingTags;
-  if(!tags.length){try{showLoading('タグを生成中...');tags=await genTags(fields,memo);hideLoading();}catch(e){hideLoading();tags=[];}}
+  if(!tags.length&&hasAI()){
+    try{showLoading('タグを生成中...');tags=await genTags(fields,memo);hideLoading();}catch(e){hideLoading();tags=[];}
+  }
   const card={id:genId(),createdAt:Date.now(),updatedAt:Date.now(),imageDataUrl:state.pendingImg?.dataUrl||null,fields,fieldVisibility:{...state.pendingVis},tags,memo,color:avColor(fields.name||'?'),initial:avInit(fields.name||'?')};
   try{await dbSave(card);showToast('✓ 名刺を保存しました');navigate('home');}
   catch(e){showToast('✗ 保存に失敗しました');}
@@ -436,15 +495,21 @@ function deselectTag(t){state.selTags=state.selTags.filter(x=>x!==t);renderTagCo
 
 // ===== MATCH SEARCH =====
 function renderMatchSearch(){
+  const noAI = !hasAI();
   $id('screen-match').innerHTML=`
 <div class="sb"><span>マッチング検索</span><span></span></div>
 <div class="nb"><div class="nb-title">マッチング検索</div></div>
 <div class="sb-body">
-  <div style="padding:14px 14px 8px;">
+  ${noAI?`<div style="margin:14px 14px 0;background:#fff3e0;border-radius:12px;padding:14px;border:1px solid #ffe082;">
+    <div style="font-size:13px;font-weight:700;color:#e65100;margin-bottom:6px;">🤖 AI検索を使うには</div>
+    <div style="font-size:12px;color:var(--text2);line-height:1.8;">設定画面でGemini APIキーまたはOllamaを設定すると、自然言語でマッチング検索できます。</div>
+    <button class="btn btn-s" style="font-size:12px;padding:9px;margin-top:10px;" onclick="navigate('settings')">⚙ 設定を開く</button>
+  </div>`:''}
+  <div style="padding:14px 14px 8px;" ${noAI?'style="opacity:.4;pointer-events:none;"':''}>
     <div style="font-size:13px;color:var(--text2);margin-bottom:8px;">どんな人を探していますか？</div>
-    <textarea class="inp" id="match-in" rows="3" placeholder="例: Reactが得意なエンジニアを探している&#10;例: マーケティング経験者が必要&#10;例: デザインの相談ができる人" style="resize:none;font-size:13px;"></textarea>
+    <textarea class="inp" id="match-in" rows="3" placeholder="例: Reactが得意なエンジニアを探している&#10;例: マーケティング経験者が必要&#10;例: デザインの相談ができる人" style="resize:none;font-size:13px;" ${noAI?'disabled':''}></textarea>
   </div>
-  <div style="padding:0 14px 12px;"><button class="btn btn-p" onclick="doMatch()">🔍 検索する</button></div>
+  <div style="padding:0 14px 12px;"><button class="btn btn-p" onclick="doMatch()" ${noAI?'disabled style="opacity:.4;"':''}>🔍 検索する</button></div>
   <div id="match-res"></div>
   <div style="height:10px;"></div>
 </div>
@@ -624,11 +689,7 @@ function bnav(active){const items=[{id:'home',i:'🏠',l:'ホーム',s:'home'},{
 (async function(){
   try{
     await initDB();
-    if(!state.settings.apiKey && state.settings.provider==='gemini'){
-      navigate('settings');
-    }else{
-      navigate('home');
-    }
+    navigate('home');
   }catch(e){
     document.getElementById('app').innerHTML=`<div class="empty" style="height:100vh;"><div class="empty-i">⚠️</div><div class="empty-t">初期化エラー</div><div style="font-size:13px;">${e.message}</div></div>`;
   }
